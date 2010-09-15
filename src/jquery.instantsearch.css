@@ -1,4 +1,5 @@
 .as-instant {
+    margin-bottom: 1em;
 }
 
 .as-instant .as-input, .as-instant .as-suggestion {
@@ -17,30 +18,53 @@
     width: 400px;
 }
 
-.as-instant .as-input, .as-instant .as-close, .as-instant .as-submit {
+.as-instant .as-input, .as-instant .as-close span, .as-instant .as-submit {
     float: left;
     position: relative;
 }
 
-.as-instant .as-suggestion {
-    background: #fff;
-    color: silver;
+.as-instant .as-input, .as-instant .as-submit {
 }
 
-.as-instant .as-close {
+.as-instant .as-suggestion {
+    background: white;
+    color: silver;
+    position: absolute;
+}
+
+.as-instant .as-close span {
+    /*
     border: 1px solid #ccc;
+    */
     display: block;
     height: 35px;
     left: -37px;
     text-indent: -9999px;
+    top: 1px;
     width: 35px;
+}
+
+.as-instant .as-close:hover span {
+    background: #eee;
+}
+
+.as-instant .as-close:active span {
+    background: #ddd;
 }
 
 .as-instant .as-submit {
     border: 1px solid #ccc;
     height: 37px;
-    left: -37px;
-    padding: 5px 10px
+    left: -35px;
+    padding: 5px 10px;
+}
+
+.as-instant .as-submit:hover {
+    background: #eee;
+}
+
+.as-instant .as-submit:active {
+    background: #ddd;
 }
 
 .as-instant .as-selections {
@@ -50,10 +74,11 @@
     list-style-type: none;
     margin: 0;
     padding: 0;
-    position: relative;
+    position: absolute;
 }
 
 .as-instant .as-selections .as-selection {
+    background: white;
     cursor: pointer;
     font: 18px;
     padding: 5px 8px;
