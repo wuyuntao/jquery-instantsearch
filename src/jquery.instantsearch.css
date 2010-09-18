@@ -83,3 +83,9 @@
     font: 18px;
     padding: 5px 8px;
 }
+
+.as-instant .as-selections .as-selection:hover,
+.as-instant .as-selections .as-selection:active,
+.as-instant .as-selections .as-selection-hover {
+    background: silver;
+}

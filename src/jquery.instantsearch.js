@@ -21,13 +21,14 @@ $.fn.instantSearch = function(options) {
         searchResultLimit: 10,
         suggestionLimit: 10,
 
-        // CSS Classes
+        // CSS Class names
         closeClass: 'as-close',
         containerClass: 'as-instant',
         formClass: 'as-form',
         inputClass: 'as-input',
         resultsClass: 'as-results',
         selectionClass: 'as-selection',
+        selectionHoverClass: 'as-selection-hover',
         selectionsClass: 'as-selections',
         submitClass: 'as-submit',
         suggestionClass: 'as-suggestion',
@@ -43,6 +44,15 @@ $.fn.instantSearch = function(options) {
         inputSelector: 'input[name=query]',
         submitSelector: 'input[name=submit]',
         resultsSelector: '#results',
+
+        // Shortcuts
+        keyUp: 38,
+        keyDown: 40,
+        keyTab: 9,
+        keyEnter: 13,
+        keyEscape: 27,
+        keyShift: 16,
+        keyCapslock: 20,
 
         // Events
     }, options || {});
@@ -75,12 +85,45 @@ $.fn.instantSearch = function(options) {
                         .hide()
                         .appendTo(container);
 
-        if (input.data(options.timerName)) {
-            clearInterval(input.data(options.timerName));
-            input.data(options.timerName, null);
-        }
-
-        input.data(options.timerName, setInterval(inputChange, options.interval));
+        input.focus(function() {
+            if (input.data(options.timerName)) {
+                clearInterval(input.data(options.timerName));
+                input.data(options.timerName, null);
+            }
+            input.data(options.timerName, setInterval(inputChange, options.interval));
+        }).blur(function() {
+            suggestionHide();
+        }).keydown(function(e) {
+            switch(e.keyCode) {
+                case options.keyUp:
+                    e.preventDefault();
+                    selectionMove('up');
+                    break;
+                case options.keyDown:
+                    e.preventDefault();
+                    selectionMove('down');
+                    break;
+                case options.keyTab:
+                    e.preventDefault();
+                    input.data(options.valueName, suggestion.val()).val(suggestion.val());
+                    suggestionHide();
+                    break;
+                case options.keyEnter:
+                    var hover = $('li.' + options.selectionHoverClass + ':first', selections);
+                    if (hover.length) {
+                        e.preventDefault();
+                        input.data(options.valueName, hover.text()).val(hover.text());
+                        suggestion.val(input.val());
+                        suggestionHide();
+                    }
+                    break;
+                case options.keyEscape:
+                case options.keyShift:
+                case options.keyCapslock:
+                    suggestionHide();
+                    break;
+            }
+        });
 
         function inputChange() {
             if (input.data(options.valueName) !== input.val()) {
@@ -98,10 +141,8 @@ $.fn.instantSearch = function(options) {
                     input.data(options.suggestRequestName, null);
                 }
 
-                // Hide suggestions
                 if (!input.val() || !suggestion.val().match(input.val())) {
-                    suggestion.val('');
-                    selections.hide();
+                    suggestionHide();
                 }
 
                 if (input.val()) {
@@ -131,6 +172,7 @@ $.fn.instantSearch = function(options) {
                                 for (var i = 0, len = data.length; i < len; ++i) {
                                     $('<li></li>').addClass(options.selectionClass)
                                         .text(data[i].query)
+                                        .hoverClass(options.selectionHoverClass)
                                         .click(selectionClick)
                                         .appendTo(selections);
                                 }
@@ -140,12 +182,11 @@ $.fn.instantSearch = function(options) {
                             }
 
                             function selectionClick(e) {
-                                selection = $(this);
-                                input.val(selection.text());
-                                suggestion.val(selection.text());
+                                var text = $(this).text();
+                                input.data(options.valueName, text).val(text);
 
                                 // Trigger onSearch event
-                                selections.fadeOut('fast');
+                                suggestionHide();
                             }
                         },
                         error: function(xhr, text, e) {
@@ -158,8 +199,40 @@ $.fn.instantSearch = function(options) {
 
                 input.data(options.valueName, input.val());
             }
+
         }
+
+        function selectionMove(direction) {
+            var all = $('li', selections);
+                hover = all.filter('.' + options.selectionHoverClass + ':first');
+            if (all.length) {
+                if (hover.length) {
+                    hover = hover[direction === 'up' ? 'prev' : 'next']();
+                }
+                if (!hover.length) {
+                    hover = all.filter(direction === 'up' ? ':last': ':first');
+                }
+                all.removeClass(options.selectionHoverClass);
+                hover.addClass(options.selectionHoverClass);
+            }
+        }
+
+        function suggestionHide() {
+            suggestion.val(input.val());
+            selections.hide();
+        }
+
     });
 };
+
+$.fn.hoverClass = function(klass) {
+    if (!this.length) return this;
+
+    return this.hover(function() {
+        $(this).addClass(klass);
+    }, function() {
+        $(this).removeClass(klass);
+    });
+}
 
 })(jQuery);
