@@ -16,6 +16,10 @@ $.fn.instantSearch = function(options) {
         suggestURL: '/suggest/',
         searchURL: '/search/',
 
+        // Extra params
+        suggestParams: null,
+        searchParams: null,
+
         // Parameters
         delay: 500,
         interval: 100,
@@ -166,10 +170,10 @@ $.fn.instantSearch = function(options) {
                         url: options.suggestURL,
                         type: 'get',
                         dataType: 'json',
-                        data: {
+                        data: $.extend({}, options.suggestParams || {}, {
                             query: input.val(),
                             limit: options.suggestionLimit
-                        },
+                        }),
                         success: function(data) {
                             // Trigger onSuggestSuccess event
                             if ($.isFunction(options.suggestSuccess))
@@ -225,10 +229,10 @@ $.fn.instantSearch = function(options) {
                                 url: options.searchURL,
                                 type: 'get',
                                 dataType: 'json',
-                                data: {
+                                data: $.extend({}, options.searchParams || {}, {
                                     query: input.val(),
                                     limit: options.searchResultLimit
-                                },
+                                }),
                                 success: function(data) {
                                     // Trigger onSearchSuccess event
                                     if ($.isFunction(options.searchSuccess))
