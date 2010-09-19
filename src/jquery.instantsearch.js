@@ -17,6 +17,7 @@ $.fn.instantSearch = function(options) {
         searchURL: '/search/',
 
         // Parameters
+        delay: 500,
         interval: 100,
         searchResultLimit: 10,
         suggestionLimit: 10,
@@ -34,6 +35,7 @@ $.fn.instantSearch = function(options) {
         suggestionClass: 'as-suggestion',
 
         // Date names
+        delayName: 'as-delay',
         timerName: 'as-timer',
         valueName: 'as-value',
         searchRequestName: 'as-search-request',
@@ -103,98 +105,129 @@ $.fn.instantSearch = function(options) {
                     e.preventDefault();
                     selectionMove('down');
                     break;
-                case options.keyTab:
-                    e.preventDefault();
-                    input.data(options.valueName, suggestion.val()).val(suggestion.val());
-                    suggestionHide();
-                    break;
-                case options.keyEnter:
-                    var hover = $('li.' + options.selectionHoverClass + ':first', selections);
-                    if (hover.length) {
+                    case options.keyTab:
                         e.preventDefault();
-                        input.data(options.valueName, hover.text()).val(hover.text());
-                        suggestion.val(input.val());
+                        input.data(options.valueName, suggestion.val()).val(suggestion.val());
+                        suggestionHide();
+                        break;
+                    case options.keyEnter:
+                        var hover = $('li.' + options.selectionHoverClass + ':first', selections);
+                        if (hover.length) {
+                            e.preventDefault();
+                            input.data(options.valueName, hover.text()).val(hover.text());
+                            suggestion.val(input.val());
+                            suggestionHide();
+                        }
+                        break;
+                    case options.keyEscape:
+                    case options.keyShift:
+                    case options.keyCapslock:
+                        suggestionHide();
+                        break;
+                }
+            });
+
+            function inputChange() {
+                if (input.data(options.valueName) !== input.val()) {
+                    // Trigger onChange event
+                    if ($.isFunction(options.change)) options.change(input);
+
+                    // Cancel previous request
+                    if (input.data(options.searchRequestName)) {
+                        input.data(options.searchRequestName).abort();
+                        input.data(options.searchRequestName, null);
+                    }
+
+                    if (input.data(options.suggestRequestName)) {
+                        input.data(options.suggestRequestName).abort();
+                        input.data(options.suggestRequestName, null);
+                    }
+
+                    if (!input.val() || !suggestion.val().match(input.val())) {
                         suggestionHide();
                     }
-                    break;
-                case options.keyEscape:
-                case options.keyShift:
-                case options.keyCapslock:
-                    suggestionHide();
-                    break;
-            }
-        });
 
-        function inputChange() {
-            if (input.data(options.valueName) !== input.val()) {
-                // Trigger onChange event
-                if ($.isFunction(options.change)) options.change(input);
+                    if (input.val()) {
+                        // Trigger onSuggest event
+                        if ($.isFunction(options.suggest)) options.suggest(input);
 
-                // Cancel previous request
-                if (input.data(options.searchRequestName)) {
-                    input.data(options.searchRequestName).abort();
-                    input.data(options.searchRequestName, null);
-                }
+                        // Get suggestion of search query
+                        input.data(options.suggestRequestName, $.ajax({
+                            url: options.suggestURL,
+                            type: 'get',
+                            dataType: 'json',
+                            data: {
+                                query: input.val(),
+                                limit: options.suggestionLimit
+                            },
+                            success: function(data) {
+                                // Trigger onSuggestSuccess event
+                                if ($.isFunction(options.suggestSuccess))
+                                    options.suggestSuccess(input, data);
 
-                if (input.data(options.suggestRequestName)) {
-                    input.data(options.suggestRequestName).abort();
-                    input.data(options.suggestRequestName, null);
-                }
+                                // Only show suggestions when value matches first suggestion
+                                if (data.length && data[0].query.match(input.val())
+                                        && data[0].query != input.val()) {
+                                    suggestion.val(data[0].query);
 
-                if (!input.val() || !suggestion.val().match(input.val())) {
-                    suggestionHide();
-                }
-
-                if (input.val()) {
-                    // Trigger onSuggest event
-                    if ($.isFunction(options.suggest)) options.suggest(input);
-
-                    // Get suggestion of search query
-                    input.data(options.suggestRequestName, $.ajax({
-                        url: options.suggestURL,
-                        type: 'get',
-                        dataType: 'json',
-                        data: {
-                            query: input.val(),
-                            limit: options.suggestionLimit
-                        },
-                        success: function(data) {
-                            // Trigger onSuggestSuccess event
-                            if ($.isFunction(options.suggestSuccess))
-                                options.suggestSuccess(input, data);
-
-                            // Only show suggestions when value matches first suggestion
-                            if (data.length && data[0].query.match(input.val())
-                                    && data[0].query != input.val()) {
-                                suggestion.val(data[0].query);
-
-                                selections.empty();
-                                for (var i = 0, len = data.length; i < len; ++i) {
-                                    $('<li></li>').addClass(options.selectionClass)
-                                        .text(data[i].query)
-                                        .hoverClass(options.selectionHoverClass)
-                                        .click(selectionClick)
-                                        .appendTo(selections);
+                                    selections.empty();
+                                    for (var i = 0, len = data.length; i < len; ++i) {
+                                        $('<li></li>').addClass(options.selectionClass)
+                                            .text(data[i].query)
+                                            .hoverClass(options.selectionHoverClass)
+                                            .click(selectionClick)
+                                            .appendTo(selections);
+                                    }
+                                    selections.fadeIn('fast');
+                                } else {
+                                    selections.fadeOut('fast');
                                 }
-                                selections.fadeIn('fast');
-                            } else {
-                                selections.fadeOut('fast');
-                            }
 
-                            function selectionClick(e) {
-                                var text = $(this).text();
-                                input.data(options.valueName, text).val(text);
+                                function selectionClick(e) {
+                                    var text = $(this).text();
+                                    input.data(options.valueName, text).val(text);
 
-                                // Trigger onSearch event
-                                suggestionHide();
+                                    // Trigger onSearch event
+                                    suggestionHide();
+                                }
+                            },
+                            error: function(xhr, text, e) {
+                                // Trigger onSuggestError event
+                                if ($.isFunction(options.suggestError))
+                                    options.suggestError(input, e);
                             }
-                        },
-                        error: function(xhr, text, e) {
-                            // Trigger onSuggestError event
-                            if ($.isFunction(options.suggestError))
-                                options.suggestError(input, e);
+                        }));
+
+                        if (input.data(options.delayName)) {
+                            clearTimeout(input.data(options.delayName));
+                            input.data(options.delayName, null);
                         }
-                    }));
+
+                        input.data(options.delayName, setTimeout(function() {
+                            if (input.val()) {
+                            input.data(options.searchRequestName, $.ajax({
+                                url: options.searchURL,
+                                type: 'get',
+                                dataType: 'json',
+                                data: {
+                                    query: input.val(),
+                                    limit: options.searchResultLimit
+                                },
+                                success: function(data) {
+                                    // Trigger onSearchSuccess event
+                                    if ($.isFunction(options.searchSuccess))
+                                        options.searchSuccess(input, data);
+
+                                    results.html(data.html);
+                                },
+                                error: function(xhr, text, e) {
+                                    // Trigger onSearchError event
+                                    if ($.isFunction(options.searchError))
+                                        options.searchError(input, e);
+                                }
+                            }));
+                        }
+                    }, options.delay));
                 }
 
                 input.data(options.valueName, input.val());
@@ -220,6 +253,7 @@ $.fn.instantSearch = function(options) {
         function suggestionHide() {
             suggestion.val(input.val());
             selections.hide();
+            $('li', selections).removeClass(options.selectionHoverClass);
         }
 
     });
