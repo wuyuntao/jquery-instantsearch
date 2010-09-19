@@ -41,6 +41,7 @@ $.fn.instantSearch = function(options) {
 
         // Date names
         delayName: 'as-delay',
+        hideName: 'as-hide',
         timerName: 'as-timer',
         valueName: 'as-value',
         searchRequestName: 'as-search-request',
@@ -88,7 +89,9 @@ $.fn.instantSearch = function(options) {
                         .css('visibility', 'hidden'),
 
             suggestion = $('<input type="text" name="suggestion" autocomplete="off"/>')
-                        .addClass(options.suggestionClass).prependTo(form),
+                        .addClass(options.suggestionClass)
+                        .val(input.val())
+                        .prependTo(form),
 
             selections = $('<ul></ul>')
                         .addClass(options.selectionsClass)
@@ -101,14 +104,16 @@ $.fn.instantSearch = function(options) {
                         .insertBefore(results)
                         .hide();
 
-        input.focus(function() {
+        input.data(options.valueName, input.val()).focus(function() {
             if (input.data(options.timerName)) {
                 clearInterval(input.data(options.timerName));
                 input.data(options.timerName, null);
             }
             input.data(options.timerName, setInterval(inputChange, options.interval));
-        }).blur(function() {
-            suggestionHide();
+        }).blur(function(e) {
+            input.data(options.hideName, setTimeout(function() {
+                suggestionHide();
+            }, options.delay));
         }).keydown(function(e) {
             switch(e.keyCode) {
                 case options.keyUp:
@@ -193,6 +198,8 @@ $.fn.instantSearch = function(options) {
                                         .appendTo(selections);
                                 }
                                 close.css('visibility', 'visible');
+                                if (input.data(options.hideName))
+                                    clearTimeout(input.data(options.hideName));
                                 selections.fadeIn('fast');
                             } else {
                                 selections.fadeOut('fast');
@@ -200,7 +207,7 @@ $.fn.instantSearch = function(options) {
 
                             function selectionClick(e) {
                                 var text = $(this).text();
-                                input.data(options.valueName, text).val(text);
+                                input.data(options.valueName, text).val(text).focus();
 
                                 // Trigger onSearch event
                                 suggestionHide();
