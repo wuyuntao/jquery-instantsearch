@@ -68,6 +68,7 @@
 }
 
 .as-instant .as-selections {
+    background: white;
     border: 1px solid #ccc;
     border-top-width: 0px;
     clear: both;
@@ -75,6 +76,7 @@
     margin: 0;
     padding: 0;
     position: absolute;
+    z-index: 200;
 }
 
 .as-instant .as-selections .as-selection {
@@ -88,4 +90,11 @@
 .as-instant .as-selections .as-selection:active,
 .as-instant .as-selections .as-selection-hover {
     background: silver;
+}
+
+.as-results-overlay {
+    position: absolute;
+    background: silver;
+    opacity: 0.5;
+    z-index: 100;
 }
