@@ -33,12 +33,10 @@
 }
 
 .as-instant .as-close span {
-    /*
-    border: 1px solid #ccc;
-    */
+    background: #ccc;
     display: block;
     height: 35px;
-    left: -37px;
+    left: -35px;
     text-indent: -9999px;
     top: 1px;
     width: 35px;

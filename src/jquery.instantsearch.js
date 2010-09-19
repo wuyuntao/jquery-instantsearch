@@ -79,7 +79,9 @@ $.fn.instantSearch = function(options) {
 
             close = $('<a href="#close"><span></span></a>')
                         .addClass(options.closeClass)
-                        .insertAfter(input),
+                        .click(suggestionHide)
+                        .insertAfter(input)
+                        .css('visibility', 'hidden'),
 
             suggestion = $('<input type="text" name="suggestion" autocomplete="off"/>')
                         .addClass(options.suggestionClass).prependTo(form),
@@ -186,6 +188,7 @@ $.fn.instantSearch = function(options) {
                                         .click(selectionClick)
                                         .appendTo(selections);
                                 }
+                                close.css('visibility', 'visible');
                                 selections.fadeIn('fast');
                             } else {
                                 selections.fadeOut('fast');
@@ -265,6 +268,7 @@ $.fn.instantSearch = function(options) {
         }
 
         function suggestionHide() {
+            close.css('visibility', 'hidden');
             suggestion.val(input.val());
             selections.hide();
             $('li', selections).removeClass(options.selectionHoverClass);
